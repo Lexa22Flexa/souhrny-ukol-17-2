@@ -1,5 +1,11 @@
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello, World!");
+        DeskovaHraFrame frame = new DeskovaHraFrame();
+        try {
+            frame.setVisible(true);
+            frame.nactiDeskovky("deskovky.txt", ";");
+        } catch (DeskovaHraException e) {
+            frame.vyhlasChybu(e);
+        }
     }
 }
