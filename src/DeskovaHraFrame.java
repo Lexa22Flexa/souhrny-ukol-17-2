@@ -140,7 +140,9 @@ public class DeskovaHraFrame extends JFrame{
         try {
             nactiDoOkna();
         } catch (DeskovaHraException e) {
-            System.err.println("fdsfsd");
+            System.err.println("ajajaj");
         }
     }
+
+    //ve formu shiftem označíme, co má být v button group => vlevo ve sloupečku Button Group => New.. => zadáme název => ok
 }
