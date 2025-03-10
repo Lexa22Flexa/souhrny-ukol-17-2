@@ -1,7 +1,7 @@
 import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -21,12 +21,14 @@ public class DeskovaHraFrame extends JFrame{
     private JButton btUlozit;
     private JButton btNovyZaznam;
     private ButtonGroup oblibenostGroup;
+
     private int pocet = 0;
 
     private List<DeskovaHra> seznamDeskovek = new ArrayList<>();
 
     public DeskovaHraFrame() {
         initComponents();
+        initMenu();
     }
 
     private void initComponents() {
@@ -47,6 +49,74 @@ public class DeskovaHraFrame extends JFrame{
         btNovyZaznam.addActionListener(e -> pridatZaznam());
     }
 
+    private void initMenu() {
+        JMenuBar menuBar = new JMenuBar();
+        setJMenuBar(menuBar);
+
+        JMenu menuSoubor = new JMenu("Soubor");
+        menuBar.add(menuSoubor);
+
+        JMenuItem nacist = new JMenuItem("Načíst");
+        menuSoubor.add(nacist);
+        nacist.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+        nacist.addActionListener(e -> {
+            try {
+                nactiDeskovky("deskovky.txt", ";");
+            } catch (DeskovaHraException ex) {
+                vyhlasChybu(ex);
+            }
+        });
+        JMenuItem ulozit = new JMenuItem("Uložit");
+        menuSoubor.add(ulozit);
+        ulozit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+        ulozit.addActionListener(e -> ulozDoSouboru("zkouska.txt", ":"));
+
+
+        JMenu menuAkce = new JMenu("Akce");
+        menuBar.add(menuAkce);
+
+        JMenuItem pridejNovouHru = new JMenuItem("Přidat hru");
+        menuAkce.add(pridejNovouHru);
+        pridejNovouHru.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.SHIFT_MASK));
+        pridejNovouHru.addActionListener(e -> pridatZaznam());
+        JMenuItem odeberHru = new JMenuItem("Odeber hru");
+        menuAkce.add(odeberHru);
+        odeberHru.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+        odeberHru.addActionListener(e -> odebratHru());
+        JMenuItem seradHry = new JMenuItem("Seřaď podle názvu");
+        menuAkce.addSeparator();
+        menuAkce.add(seradHry);
+        seradHry.addActionListener(e -> razeniHer());
+
+
+        JMenu menuSouhrn = new JMenu("Souhrn");
+        menuBar.add(menuSouhrn);
+
+        JMenuItem zobrazStatistiky = new JMenuItem("Zobraz statistiky");
+        menuSouhrn.add(zobrazStatistiky);
+        zobrazStatistiky.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, ActionEvent.CTRL_MASK));
+        zobrazStatistiky.addActionListener(e -> statistikyHop());//miaW <3     hatsune miku je muj lord and savior !!!!!!!
+
+    }
+
+    private void statistikyHop() {
+        String oblibeneHry = "";
+        int pocetZakoupenychHer = 0;
+        for (DeskovaHra hra : seznamDeskovek) {
+            if (hra.getOblibenost() == 3) oblibeneHry = oblibeneHry + hra.getNazev() + ", ";
+            if (hra.isKoupena()) pocetZakoupenychHer++;
+        }
+        if (oblibeneHry.contentEquals("")) oblibeneHry = "žádné";
+
+        JOptionPane.showMessageDialog(this,
+                "Hry v seznamu: " + seznamDeskovek.size() + "\n Nejoblíbenější hry: " + oblibeneHry + "\n Počet zakoupených her: " + pocetZakoupenychHer);
+    }
+
+    private void razeniHer() {
+        List<DeskovaHra> pomocny = new ArrayList<>(seznamDeskovek);
+        // pomocny.sort((a, b) -> { return -1 * a.compareTo(b); });
+    }
+
     private void dalsiZaznam() {
         if(pocet == seznamDeskovek.size() - 1) {
             JOptionPane.showMessageDialog(this, "Nejsou k dispozici další záznamy!");
@@ -58,6 +128,7 @@ public class DeskovaHraFrame extends JFrame{
                 vyhlasChybu(e);
             }
         }
+        System.out.println(pocet);
     }
 
     private void zpetZaznam() {
@@ -71,6 +142,7 @@ public class DeskovaHraFrame extends JFrame{
                 vyhlasChybu(e);
             }
         }
+        System.out.println(pocet);
     }
 
     private void ulozDeskovku(int pocet) {
@@ -81,12 +153,37 @@ public class DeskovaHraFrame extends JFrame{
         if(rb3.isSelected()) seznamDeskovek.get(pocet).setOblibenost(3);
     }
 
+    private void ulozDoSouboru(String nazevSouboru, String oddelovac) {
+        ulozDeskovku(pocet);
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter("resources/" + nazevSouboru)))) {
+            for (DeskovaHra hra : seznamDeskovek) {
+                writer.println(hra.getNazev() + oddelovac + hra.isKoupena() + oddelovac + hra.getOblibenost());
+            }
+        } catch (IOException e) {
+            System.err.println("Dopiš toto");
+        }
+    }
+
     public void pridejDeskovkuDoSeznamu(DeskovaHra deskovaHra) {
         seznamDeskovek.add(deskovaHra);
     }
 
     public void vyhlasChybu(DeskovaHraException e) {
         JOptionPane.showMessageDialog(this, e);
+    }
+
+    private void odebratHru() {
+        if (pocet > 0) {
+            seznamDeskovek.remove(pocet);
+            pocet -= 1;
+            try {
+                nactiDoOkna();
+            } catch (DeskovaHraException e) {
+                vyhlasChybu(e);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Tohle je poslední záznam!!");
+        }
     }
 
     public void nactiDeskovky(String nazevSouboru, String oddelovac) throws DeskovaHraException {
